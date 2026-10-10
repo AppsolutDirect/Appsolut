@@ -1,0 +1,181 @@
+import { useStore } from '@nanostores/react';
+import type { LinksFunction } from '@remix-run/cloudflare';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
+import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
+import xtermStyles from '@xterm/xterm/css/xterm.css?url';
+import { useEffect } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { cssTransition, ToastContainer } from 'react-toastify';
+
+import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
+import { createHead } from 'remix-island';
+import { ClientOnly } from 'remix-utils/client-only';
+
+import 'virtual:uno.css';
+
+const toastAnimation = cssTransition({
+  enter: 'animated fadeInRight',
+  exit: 'animated fadeOutRight',
+});
+
+export const links: LinksFunction = () => [
+  {
+    rel: 'icon',
+    href: '/favicon.svg',
+    type: 'image/svg+xml',
+  },
+  { rel: 'manifest', href: '/manifest.json' },
+  { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
+  { rel: 'stylesheet', href: reactToastifyStyles },
+  { rel: 'stylesheet', href: tailwindReset },
+  { rel: 'stylesheet', href: globalStyles },
+  { rel: 'stylesheet', href: mobilePerformanceStyles },
+  { rel: 'stylesheet', href: xtermStyles },
+  {
+    rel: 'preconnect',
+    href: 'https://fonts.googleapis.com',
+  },
+  {
+    rel: 'preconnect',
+    href: 'https://fonts.gstatic.com',
+    crossOrigin: 'anonymous',
+  },
+  {
+    rel: 'stylesheet',
+    href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  },
+];
+
+const inlineThemeCode = stripIndents`
+  setTutorialKitTheme();
+
+  function setTutorialKitTheme() {
+    let theme = localStorage.getItem('bolt_theme');
+
+    if (!theme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    document.querySelector('html')?.setAttribute('data-theme', theme);
+  }
+`;
+
+export const Head = createHead(() => (
+  <>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-visual" />
+    <meta name="theme-color" content="#1e2327" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <Meta />
+    <Links />
+    <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
+  </>
+));
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const theme = useStore(themeStore);
+
+  useEffect(() => {
+    document.querySelector('html')?.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // PWA: Service Worker registrieren und bei einer neuen Version einmal neu laden
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) {
+      return undefined;
+    }
+
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloading = false;
+
+    const onControllerChange = () => {
+      // Beim allerersten Installieren nicht neu laden, nur bei einem Update
+      if (hadController && !reloading) {
+        reloading = true;
+        window.location.reload();
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+  }, []);
+
+  return (
+    <>
+      <ClientOnly>{() => <DndProvider backend={HTML5Backend}>{children}</DndProvider>}</ClientOnly>
+      <ToastContainer
+        closeButton={({ closeToast }) => {
+          return (
+            <button className="Toastify__close-button" onClick={closeToast}>
+              <div className="i-ph:x text-lg" />
+            </button>
+          );
+        }}
+        icon={({ type }) => {
+          switch (type) {
+            case 'success': {
+              return <div className="i-ph:check-bold text-bolt-elements-icon-success text-2xl" />;
+            }
+            case 'error': {
+              return <div className="i-ph:warning-circle-bold text-bolt-elements-icon-error text-2xl" />;
+            }
+          }
+
+          return undefined;
+        }}
+        position="bottom-right"
+        pauseOnFocusLoss
+        transition={toastAnimation}
+        autoClose={3000}
+      />
+      <ScrollRestoration />
+      <Scripts />
+    </>
+  );
+}
+
+import { logStore } from './lib/stores/logs';
+import { themeStore } from './lib/stores/theme';
+import globalStyles from './styles/index.scss?url';
+import mobilePerformanceStyles from './styles/mobile-performance.css?url';
+import { stripIndents } from './utils/stripIndent';
+
+export default function App() {
+  const theme = useStore(themeStore);
+
+  useEffect(() => {
+    logStore.logSystem('Application initialized', {
+      theme,
+      platform: navigator.platform,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Initialize debug logging with improved error handling
+    import('./utils/debugLogger')
+      .then(({ debugLogger }) => {
+        /*
+         * The debug logger initializes itself and starts disabled by default
+         * It will only start capturing when enableDebugMode() is called
+         */
+        const status = debugLogger.getStatus();
+        logStore.logSystem('Debug logging ready', {
+          initialized: status.initialized,
+          capturing: status.capturing,
+          enabled: status.enabled,
+        });
+      })
+      .catch((error) => {
+        logStore.logError('Failed to initialize debug logging', error);
+      });
+  }, []);
+
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
+}
