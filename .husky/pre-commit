@@ -13,17 +13,25 @@ if ! command -v pnpm >/dev/null 2>&1; then
     exit 1
 fi
 
-# Run typecheck
-echo "Running typecheck..."
-if ! pnpm typecheck; then
-    echo "❌ Type checking failed! Please review TypeScript types."
-    echo "Once you're done, don't forget to add your changes to the commit! 🚀"
-    exit 1
+# NOTE: The full TypeScript check is deliberately NOT run on commit.
+# `pnpm typecheck` runs `tsc` over the whole project and is slow and very
+# memory-hungry, which blocks commits on smaller machines. It runs in CI
+# instead: .github/workflows/ci.yaml -> "Run type check".
+# Run `pnpm typecheck` manually if you want to verify types before committing.
+
+# Lint only the staged files. This keeps pre-existing lint issues elsewhere in
+# the tree from blocking unrelated commits while still guarding new changes.
+staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^app/.*\.(ts|tsx|js|jsx)$' || true)
+
+if [ -z "$staged" ]; then
+    echo "👍 No staged TypeScript/JavaScript files to lint. Committing changes..."
+    exit 0
 fi
 
-# Run lint
-echo "Running lint..."
-if ! pnpm lint; then
+echo "Running lint on staged files:"
+echo "$staged" | sed 's/^/  /'
+
+if ! printf '%s\n' "$staged" | xargs pnpm exec eslint --cache --cache-location ./node_modules/.cache/eslint; then
     echo "❌ Linting failed! Run 'pnpm lint:fix' to fix the easy issues."
     echo "Once you're done, don't forget to add your beautification to the commit! 🤩"
     exit 1
