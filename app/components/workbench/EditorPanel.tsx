@@ -87,7 +87,10 @@ export const EditorPanel = memo(
     return (
       <Group orientation="vertical">
         <Panel defaultSize={showTerminal ? `${DEFAULT_EDITOR_SIZE}%` : '100%'} minSize="20%">
-          <Group key={isSmallViewport ? 'stacked' : 'side-by-side'} orientation={isSmallViewport ? 'vertical' : 'horizontal'}>
+          <Group
+            key={isSmallViewport ? 'stacked' : 'side-by-side'}
+            orientation={isSmallViewport ? 'vertical' : 'horizontal'}
+          >
             <Panel
               defaultSize={isSmallViewport ? '35%' : '20%'}
               minSize="15%"

@@ -16,9 +16,9 @@ import GitCloneButton from './GitCloneButton';
 import LlmErrorAlert from './LLMApiAlert';
 import { Messages } from './Messages.client';
 import ProgressCompilation from './ProgressCompilation';
-import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
 import { ExamplePrompts } from '~/components/chat/ExamplePrompts';
 import { SupabaseChatAlert } from '~/components/chat/SupabaseAlert';
+import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
 import DeployChatAlert from '~/components/deploy/DeployAlert';
 import { Menu } from '~/components/sidebar/Menu.client';
 import type { ElementInfo } from '~/components/workbench/Inspector';
@@ -198,6 +198,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
       // Manche Android-Tastaturen melden ihre Größe verspätet: kurz nachmessen
       const timers: ReturnType<typeof setTimeout>[] = [];
+
       const applySoon = () => {
         apply();
         [100, 250].forEach((delay) => timers.push(setTimeout(apply, delay)));
@@ -217,6 +218,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         document.removeEventListener('focusout', applySoon);
       };
     }, []);
+
     const inputCollapsed = inputAnim === 'out' || inputAnim === 'gone';
 
     // Höhe des Eingabebereichs messen (wird für Animation und Platzfreigabe gebraucht)
@@ -354,6 +356,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         : inputAnim === 'in'
           ? 'bolt-input-in 180ms ease-out'
           : undefined;
+
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const [transcript, setTranscript] = useState('');
@@ -619,7 +622,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 })}
                 style={{
                   ...(chatStarted && inputHeight > 0 ? { height: inputCollapsed ? 0 : inputHeight } : {}),
-                  ...(hasVirtualKeyboard ? { transform: 'translateY(calc(-1 * env(keyboard-inset-height, 0px)))' } : {}),
+                  ...(hasVirtualKeyboard
+                    ? { transform: 'translateY(calc(-1 * env(keyboard-inset-height, 0px)))' }
+                    : {}),
                   transition:
                     chatStarted && inputHeight > 0 && inputAnim !== 'idle' ? 'height 180ms ease-out' : undefined,
                 }}
@@ -643,102 +648,102 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     }
                   }}
                 >
-                {!chatStarted && (
-                  <div className="flex flex-col gap-2 pb-1">
-                    <div className="bolt-examples-first">
-                      <style>{`.bolt-examples-first button:not(:first-of-type) { display: none; }`}</style>
-                      {ExamplePrompts((event, messageInput) => {
-                        if (isStreaming) {
-                          handleStop?.();
-                          return;
-                        }
+                  {!chatStarted && (
+                    <div className="flex flex-col gap-2 pb-1">
+                      <div className="bolt-examples-first">
+                        <style>{`.bolt-examples-first button:not(:first-of-type) { display: none; }`}</style>
+                        {ExamplePrompts((event, messageInput) => {
+                          if (isStreaming) {
+                            handleStop?.();
+                            return;
+                          }
 
-                        handleSendMessage?.(event, messageInput);
-                      })}
+                          handleSendMessage?.(event, messageInput);
+                        })}
+                      </div>
+                      <div className="flex w-full gap-1.5">
+                        {ImportButtons(importChat)}
+                        <GitCloneButton importChat={importChat} />
+                      </div>
                     </div>
-                    <div className="flex w-full gap-1.5">
-                      {ImportButtons(importChat)}
-                      <GitCloneButton importChat={importChat} />
-                    </div>
+                  )}
+                  <div className="flex flex-col gap-2 empty:hidden">
+                    {deployAlert && (
+                      <DeployChatAlert
+                        alert={deployAlert}
+                        clearAlert={() => clearDeployAlert?.()}
+                        postMessage={(message: string | undefined) => {
+                          sendMessage?.({} as any, message);
+                          clearSupabaseAlert?.();
+                        }}
+                      />
+                    )}
+                    {supabaseAlert && (
+                      <SupabaseChatAlert
+                        alert={supabaseAlert}
+                        clearAlert={() => clearSupabaseAlert?.()}
+                        postMessage={(message) => {
+                          sendMessage?.({} as any, message);
+                          clearSupabaseAlert?.();
+                        }}
+                      />
+                    )}
+                    {actionAlert && (
+                      <ChatAlert
+                        alert={actionAlert}
+                        clearAlert={() => clearAlert?.()}
+                        postMessage={(message) => {
+                          sendMessage?.({} as any, message);
+                          clearAlert?.();
+                        }}
+                      />
+                    )}
+                    {llmErrorAlert && <LlmErrorAlert alert={llmErrorAlert} clearAlert={() => clearLlmErrorAlert?.()} />}
                   </div>
-                )}
-                <div className="flex flex-col gap-2 empty:hidden">
-                  {deployAlert && (
-                    <DeployChatAlert
-                      alert={deployAlert}
-                      clearAlert={() => clearDeployAlert?.()}
-                      postMessage={(message: string | undefined) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
-                      }}
-                    />
-                  )}
-                  {supabaseAlert && (
-                    <SupabaseChatAlert
-                      alert={supabaseAlert}
-                      clearAlert={() => clearSupabaseAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
-                      }}
-                    />
-                  )}
-                  {actionAlert && (
-                    <ChatAlert
-                      alert={actionAlert}
-                      clearAlert={() => clearAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearAlert?.();
-                      }}
-                    />
-                  )}
-                  {llmErrorAlert && <LlmErrorAlert alert={llmErrorAlert} clearAlert={() => clearLlmErrorAlert?.()} />}
-                </div>
-                {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
-                <ChatBox
-                  isModelSettingsCollapsed={isModelSettingsCollapsed}
-                  setIsModelSettingsCollapsed={setIsModelSettingsCollapsed}
-                  provider={provider}
-                  setProvider={setProvider}
-                  providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
-                  model={model}
-                  setModel={setModel}
-                  modelList={modelList}
-                  apiKeys={apiKeys}
-                  isModelLoading={isModelLoading}
-                  onApiKeysChange={onApiKeysChange}
-                  uploadedFiles={uploadedFiles}
-                  setUploadedFiles={setUploadedFiles}
-                  imageDataList={imageDataList}
-                  setImageDataList={setImageDataList}
-                  textareaRef={textareaRef}
-                  input={input}
-                  handleInputChange={handleInputChange}
-                  handlePaste={handlePaste}
-                  TEXTAREA_MIN_HEIGHT={TEXTAREA_MIN_HEIGHT}
-                  TEXTAREA_MAX_HEIGHT={TEXTAREA_MAX_HEIGHT}
-                  isStreaming={isStreaming}
-                  handleStop={handleStop}
-                  handleSendMessage={handleSendMessage}
-                  enhancingPrompt={enhancingPrompt}
-                  enhancePrompt={enhancePrompt}
-                  isListening={isListening}
-                  startListening={startListening}
-                  stopListening={stopListening}
-                  chatStarted={chatStarted}
-                  exportChat={exportChat}
-                  qrModalOpen={qrModalOpen}
-                  setQrModalOpen={setQrModalOpen}
-                  handleFileUpload={handleFileUpload}
-                  chatMode={chatMode}
-                  setChatMode={setChatMode}
-                  designScheme={designScheme}
-                  setDesignScheme={setDesignScheme}
-                  selectedElement={selectedElement}
-                  setSelectedElement={setSelectedElement}
-                  onWebSearchResult={onWebSearchResult}
-                />
+                  {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
+                  <ChatBox
+                    isModelSettingsCollapsed={isModelSettingsCollapsed}
+                    setIsModelSettingsCollapsed={setIsModelSettingsCollapsed}
+                    provider={provider}
+                    setProvider={setProvider}
+                    providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
+                    model={model}
+                    setModel={setModel}
+                    modelList={modelList}
+                    apiKeys={apiKeys}
+                    isModelLoading={isModelLoading}
+                    onApiKeysChange={onApiKeysChange}
+                    uploadedFiles={uploadedFiles}
+                    setUploadedFiles={setUploadedFiles}
+                    imageDataList={imageDataList}
+                    setImageDataList={setImageDataList}
+                    textareaRef={textareaRef}
+                    input={input}
+                    handleInputChange={handleInputChange}
+                    handlePaste={handlePaste}
+                    TEXTAREA_MIN_HEIGHT={TEXTAREA_MIN_HEIGHT}
+                    TEXTAREA_MAX_HEIGHT={TEXTAREA_MAX_HEIGHT}
+                    isStreaming={isStreaming}
+                    handleStop={handleStop}
+                    handleSendMessage={handleSendMessage}
+                    enhancingPrompt={enhancingPrompt}
+                    enhancePrompt={enhancePrompt}
+                    isListening={isListening}
+                    startListening={startListening}
+                    stopListening={stopListening}
+                    chatStarted={chatStarted}
+                    exportChat={exportChat}
+                    qrModalOpen={qrModalOpen}
+                    setQrModalOpen={setQrModalOpen}
+                    handleFileUpload={handleFileUpload}
+                    chatMode={chatMode}
+                    setChatMode={setChatMode}
+                    designScheme={designScheme}
+                    setDesignScheme={setDesignScheme}
+                    selectedElement={selectedElement}
+                    setSelectedElement={setSelectedElement}
+                    onWebSearchResult={onWebSearchResult}
+                  />
                 </div>
               </div>
             </StickToBottom>

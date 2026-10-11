@@ -6,6 +6,7 @@ export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
 export const MODIFICATIONS_TAG_NAME = 'bolt_file_modifications';
 export const MODEL_REGEX = /^\[Model: (.*?)\]\n\n/;
 export const PROVIDER_REGEX = /\[Provider: (.*?)\]\n\n/;
+
 // Standardmodell: Gemma 3 4B (Anbieter: Google)
 export const DEFAULT_MODEL = 'gemma-3-4b-it';
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
