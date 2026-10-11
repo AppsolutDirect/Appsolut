@@ -30,7 +30,7 @@ jobs:
           path: |
             .tsbuildinfo
             node_modules/.cache
-          key: ${{ runner.os }}-typescript-${{ hashFiles('**/tsconfig.json', 'app/**/*.ts', 'app/**/*.tsx') }}
+          key: ${{ runner.os }}-typescript-${{ hashFiles('**/tsconfig.json', 'app/**/*.ts', 'app/**/*.tsx', 'electron/**/*.ts', 'electron/**/*.tsx', 'functions/**/*.ts', 'scripts/**/*.js', 'scripts/**/*.mjs') }}
           restore-keys: |
             ${{ runner.os }}-typescript-
 
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules/.cache/eslint
-          key: ${{ runner.os }}-eslint-${{ hashFiles('.eslintrc*', 'app/**/*.ts', 'app/**/*.tsx') }}
+          key: ${{ runner.os }}-eslint-${{ hashFiles('.eslintrc*', 'eslint.config.mjs', 'app/**/*.ts', 'app/**/*.tsx', 'electron/**/*.ts', 'electron/**/*.tsx', 'functions/**/*.ts', 'scripts/**/*.js', 'scripts/**/*.mjs') }}
           restore-keys: |
             ${{ runner.os }}-eslint-
 
