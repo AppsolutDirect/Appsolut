@@ -1,5 +1,5 @@
-import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
+import { app, BrowserWindow } from 'electron';
 import { isDev } from '../utils/constants';
 import { store } from '../utils/store';
 

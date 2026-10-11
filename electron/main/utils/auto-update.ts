@@ -1,8 +1,8 @@
-import logger from 'electron-log';
+import path from 'node:path';
 import type { MessageBoxOptions } from 'electron';
 import { app, dialog } from 'electron';
+import logger from 'electron-log';
 import type { AppUpdater, UpdateDownloadedEvent, UpdateInfo } from 'electron-updater';
-import path from 'node:path';
 
 // NOTE: workaround to use electron-updater.
 import * as electronUpdater from 'electron-updater';

@@ -1,6 +1,6 @@
-import { app } from 'electron';
-import path from 'node:path';
 import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { app } from 'electron';
 
 // Reload on change.
 let isQuited = false;
