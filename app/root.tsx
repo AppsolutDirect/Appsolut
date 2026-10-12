@@ -25,7 +25,19 @@ export const links: LinksFunction = () => [
     href: '/favicon.svg',
     type: 'image/svg+xml',
   },
-  { rel: 'manifest', href: '/manifest.webmanifest' },
+  {
+    /*
+     * Wichtig hinter Cloudflare Access (Zero Trust): Browser holen das Web-App-Manifest
+     * grundsaetzlich OHNE Cookies. Ein auth-geschuetzter Proxy antwortet dann mit einer
+     * Redirect-Response auf eine fremde Login-Domain -> das Manifest ist unlesbar und der
+     * Browser meldet die App als "nicht installierbar".
+     * crossorigin="use-credentials" erzwingt den credentialed Fetch (same-origin, kein CORS
+     * notwendig) und hat ohne Proxy keinen Effekt.
+     */
+    rel: 'manifest',
+    href: '/manifest.webmanifest',
+    crossOrigin: 'use-credentials',
+  },
   { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
   { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png', sizes: '180x180' },
   { rel: 'stylesheet', href: reactToastifyStyles },
