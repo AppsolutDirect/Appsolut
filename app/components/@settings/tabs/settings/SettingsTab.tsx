@@ -1,3 +1,4 @@
+import { Link } from '@remix-run/react';
 import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
@@ -210,6 +211,34 @@ export default function SettingsTab() {
               </kbd>
             </div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Rechtliches / Open Source */}
+      <motion.div
+        className="bg-white dark:bg-[#0A0A0A] rounded-lg shadow-sm dark:shadow-none p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <div className="i-ph:scales-fill w-4 h-4 text-purple-500" />
+          <span className="text-sm font-medium text-bolt-elements-textPrimary">Rechtliches</span>
+        </div>
+
+        <div className="space-y-2">
+          <Link
+            to="/licenses"
+            className="flex items-center justify-between p-2 rounded-lg bg-[#FAFAFA] dark:bg-[#1A1A1A] hover:bg-[#F0F0F0] dark:hover:bg-[#222222] transition-colors"
+          >
+            <div className="flex flex-col">
+              <span className="text-sm text-bolt-elements-textPrimary">Open-Source-Lizenzen</span>
+              <span className="text-xs text-bolt-elements-textSecondary">
+                Lizenzhinweise der verwendeten Komponenten
+              </span>
+            </div>
+            <div className="i-ph:caret-right w-4 h-4 text-bolt-elements-textSecondary" />
+          </Link>
         </div>
       </motion.div>
     </div>

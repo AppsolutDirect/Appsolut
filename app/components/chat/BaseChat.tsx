@@ -16,9 +16,9 @@ import GitCloneButton from './GitCloneButton';
 import LlmErrorAlert from './LLMApiAlert';
 import { Messages } from './Messages.client';
 import ProgressCompilation from './ProgressCompilation';
-import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
 import { ExamplePrompts } from '~/components/chat/ExamplePrompts';
 import { SupabaseChatAlert } from '~/components/chat/SupabaseAlert';
+import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
 import DeployChatAlert from '~/components/deploy/DeployAlert';
 import { Menu } from '~/components/sidebar/Menu.client';
 import type { ElementInfo } from '~/components/workbench/Inspector';
@@ -156,67 +156,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [slideDistance, setSlideDistance] = useState(0);
 
     /*
-     * Android-Bildschirmtastatur: Der Eingabebereich wird um genau die Tastaturhöhe nach oben
-     * geschoben und fährt beim Schließen wieder ganz nach unten.
-     *
-     * Schnellster Weg (Chrome/Android): VirtualKeyboard-API. Der Browser liefert die Tastaturhöhe
-     * direkt als CSS-Wert (env(keyboard-inset-height)), ohne JavaScript und ohne Neuberechnung
-     * der Seite. Fallback für andere Browser: sichtbare Fläche messen und die Verschiebung
-     * direkt am Element setzen (ohne React-Rendering, ohne Übergangsanimation).
+     * Intro-Text ("Where ideas begin") auf der Startseite ausblenden, sobald in
+     * das Prompt-Textfeld geklickt wird. Der Text bleibt danach dauerhaft weg,
+     * bis die Komponente neu gerendert wird (z. B. Neuladen der Seite).
      */
-    const [hasVirtualKeyboard, setHasVirtualKeyboard] = useState(false);
+    const [introHidden, setIntroHidden] = useState(false);
 
-    useEffect(() => {
-      const nav = navigator as Navigator & { virtualKeyboard?: { overlaysContent: boolean } };
-
-      if (nav.virtualKeyboard) {
-        nav.virtualKeyboard.overlaysContent = true;
-        setHasVirtualKeyboard(true);
-
-        return () => {
-          if (nav.virtualKeyboard) {
-            nav.virtualKeyboard.overlaysContent = false;
-          }
-        };
-      }
-
-      const viewport = window.visualViewport;
-
-      if (!viewport) {
-        return undefined;
-      }
-
-      const apply = () => {
-        const offset = Math.round(window.innerHeight - viewport.height - viewport.offsetTop);
-        const element = inputContainerRef.current;
-
-        if (element) {
-          // kleine Abweichungen (Adressleiste etc.) ignorieren
-          element.style.transform = offset > 80 ? `translateY(-${offset}px)` : '';
-        }
-      };
-
-      // Manche Android-Tastaturen melden ihre Größe verspätet: kurz nachmessen
-      const timers: ReturnType<typeof setTimeout>[] = [];
-      const applySoon = () => {
-        apply();
-        [100, 250].forEach((delay) => timers.push(setTimeout(apply, delay)));
-      };
-
-      apply();
-      viewport.addEventListener('resize', apply);
-      viewport.addEventListener('scroll', apply);
-      document.addEventListener('focusin', applySoon);
-      document.addEventListener('focusout', applySoon);
-
-      return () => {
-        timers.forEach(clearTimeout);
-        viewport.removeEventListener('resize', apply);
-        viewport.removeEventListener('scroll', apply);
-        document.removeEventListener('focusin', applySoon);
-        document.removeEventListener('focusout', applySoon);
-      };
-    }, []);
     const inputCollapsed = inputAnim === 'out' || inputAnim === 'gone';
 
     // Höhe des Eingabebereichs messen (wird für Animation und Platzfreigabe gebraucht)
@@ -354,6 +299,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         : inputAnim === 'in'
           ? 'bolt-input-in 180ms ease-out'
           : undefined;
+
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const [transcript, setTranscript] = useState('');
@@ -556,16 +502,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     };
 
+    const handlePromptFocus = (event: React.FocusEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement;
+
+      // React onFocus bubbelt, daher wird hier der Fokus im Prompt-Textfeld erkannt
+      if (target.tagName === 'TEXTAREA' && inputContainerRef.current?.contains(target)) {
+        setIntroHidden(true);
+      }
+    };
+
     const baseChat = (
       <div
         ref={ref}
         className={classNames(styles.BaseChat, 'relative flex h-full w-full overflow-hidden')}
         data-chat-visible={showChat}
+        onFocus={handlePromptFocus}
       >
         <ClientOnly>{() => <Menu />}</ClientOnly>
         <div className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
-            {!chatStarted && (
+            {!chatStarted && !introHidden && (
               <div id="intro" className="mt-[16vh] max-w-2xl mx-auto text-center px-4 lg:px-0">
                 <h1 className="text-3xl lg:text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
                   Where ideas begin
@@ -614,12 +570,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               `}</style>
               <div
                 ref={inputContainerRef}
-                className={classNames('mt-auto w-full max-w-chat mx-auto z-prompt', {
-                  'sticky bottom-0': chatStarted,
-                })}
+                className={classNames(
+                  'mt-auto max-w-chat mx-auto z-prompt',
+                  {
+                    'sticky bottom-0': chatStarted,
+                  },
+                  styles.MobilePrompt,
+                )}
                 style={{
                   ...(chatStarted && inputHeight > 0 ? { height: inputCollapsed ? 0 : inputHeight } : {}),
-                  ...(hasVirtualKeyboard ? { transform: 'translateY(calc(-1 * env(keyboard-inset-height, 0px)))' } : {}),
                   transition:
                     chatStarted && inputHeight > 0 && inputAnim !== 'idle' ? 'height 180ms ease-out' : undefined,
                 }}
@@ -643,102 +602,102 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     }
                   }}
                 >
-                {!chatStarted && (
-                  <div className="flex flex-col gap-2 pb-1">
-                    <div className="bolt-examples-first">
-                      <style>{`.bolt-examples-first button:not(:first-of-type) { display: none; }`}</style>
-                      {ExamplePrompts((event, messageInput) => {
-                        if (isStreaming) {
-                          handleStop?.();
-                          return;
-                        }
+                  {!chatStarted && (
+                    <div className="flex flex-col gap-2 pb-1">
+                      <div className="bolt-examples-first">
+                        <style>{`.bolt-examples-first button:not(:first-of-type) { display: none; }`}</style>
+                        {ExamplePrompts((event, messageInput) => {
+                          if (isStreaming) {
+                            handleStop?.();
+                            return;
+                          }
 
-                        handleSendMessage?.(event, messageInput);
-                      })}
+                          handleSendMessage?.(event, messageInput);
+                        })}
+                      </div>
+                      <div className="flex w-full gap-1.5">
+                        {ImportButtons(importChat)}
+                        <GitCloneButton importChat={importChat} />
+                      </div>
                     </div>
-                    <div className="flex w-full gap-1.5">
-                      {ImportButtons(importChat)}
-                      <GitCloneButton importChat={importChat} />
-                    </div>
+                  )}
+                  <div className="flex flex-col gap-2 empty:hidden">
+                    {deployAlert && (
+                      <DeployChatAlert
+                        alert={deployAlert}
+                        clearAlert={() => clearDeployAlert?.()}
+                        postMessage={(message: string | undefined) => {
+                          sendMessage?.({} as any, message);
+                          clearSupabaseAlert?.();
+                        }}
+                      />
+                    )}
+                    {supabaseAlert && (
+                      <SupabaseChatAlert
+                        alert={supabaseAlert}
+                        clearAlert={() => clearSupabaseAlert?.()}
+                        postMessage={(message) => {
+                          sendMessage?.({} as any, message);
+                          clearSupabaseAlert?.();
+                        }}
+                      />
+                    )}
+                    {actionAlert && (
+                      <ChatAlert
+                        alert={actionAlert}
+                        clearAlert={() => clearAlert?.()}
+                        postMessage={(message) => {
+                          sendMessage?.({} as any, message);
+                          clearAlert?.();
+                        }}
+                      />
+                    )}
+                    {llmErrorAlert && <LlmErrorAlert alert={llmErrorAlert} clearAlert={() => clearLlmErrorAlert?.()} />}
                   </div>
-                )}
-                <div className="flex flex-col gap-2 empty:hidden">
-                  {deployAlert && (
-                    <DeployChatAlert
-                      alert={deployAlert}
-                      clearAlert={() => clearDeployAlert?.()}
-                      postMessage={(message: string | undefined) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
-                      }}
-                    />
-                  )}
-                  {supabaseAlert && (
-                    <SupabaseChatAlert
-                      alert={supabaseAlert}
-                      clearAlert={() => clearSupabaseAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearSupabaseAlert?.();
-                      }}
-                    />
-                  )}
-                  {actionAlert && (
-                    <ChatAlert
-                      alert={actionAlert}
-                      clearAlert={() => clearAlert?.()}
-                      postMessage={(message) => {
-                        sendMessage?.({} as any, message);
-                        clearAlert?.();
-                      }}
-                    />
-                  )}
-                  {llmErrorAlert && <LlmErrorAlert alert={llmErrorAlert} clearAlert={() => clearLlmErrorAlert?.()} />}
-                </div>
-                {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
-                <ChatBox
-                  isModelSettingsCollapsed={isModelSettingsCollapsed}
-                  setIsModelSettingsCollapsed={setIsModelSettingsCollapsed}
-                  provider={provider}
-                  setProvider={setProvider}
-                  providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
-                  model={model}
-                  setModel={setModel}
-                  modelList={modelList}
-                  apiKeys={apiKeys}
-                  isModelLoading={isModelLoading}
-                  onApiKeysChange={onApiKeysChange}
-                  uploadedFiles={uploadedFiles}
-                  setUploadedFiles={setUploadedFiles}
-                  imageDataList={imageDataList}
-                  setImageDataList={setImageDataList}
-                  textareaRef={textareaRef}
-                  input={input}
-                  handleInputChange={handleInputChange}
-                  handlePaste={handlePaste}
-                  TEXTAREA_MIN_HEIGHT={TEXTAREA_MIN_HEIGHT}
-                  TEXTAREA_MAX_HEIGHT={TEXTAREA_MAX_HEIGHT}
-                  isStreaming={isStreaming}
-                  handleStop={handleStop}
-                  handleSendMessage={handleSendMessage}
-                  enhancingPrompt={enhancingPrompt}
-                  enhancePrompt={enhancePrompt}
-                  isListening={isListening}
-                  startListening={startListening}
-                  stopListening={stopListening}
-                  chatStarted={chatStarted}
-                  exportChat={exportChat}
-                  qrModalOpen={qrModalOpen}
-                  setQrModalOpen={setQrModalOpen}
-                  handleFileUpload={handleFileUpload}
-                  chatMode={chatMode}
-                  setChatMode={setChatMode}
-                  designScheme={designScheme}
-                  setDesignScheme={setDesignScheme}
-                  selectedElement={selectedElement}
-                  setSelectedElement={setSelectedElement}
-                  onWebSearchResult={onWebSearchResult}
-                />
+                  {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
+                  <ChatBox
+                    isModelSettingsCollapsed={isModelSettingsCollapsed}
+                    setIsModelSettingsCollapsed={setIsModelSettingsCollapsed}
+                    provider={provider}
+                    setProvider={setProvider}
+                    providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
+                    model={model}
+                    setModel={setModel}
+                    modelList={modelList}
+                    apiKeys={apiKeys}
+                    isModelLoading={isModelLoading}
+                    onApiKeysChange={onApiKeysChange}
+                    uploadedFiles={uploadedFiles}
+                    setUploadedFiles={setUploadedFiles}
+                    imageDataList={imageDataList}
+                    setImageDataList={setImageDataList}
+                    textareaRef={textareaRef}
+                    input={input}
+                    handleInputChange={handleInputChange}
+                    handlePaste={handlePaste}
+                    TEXTAREA_MIN_HEIGHT={TEXTAREA_MIN_HEIGHT}
+                    TEXTAREA_MAX_HEIGHT={TEXTAREA_MAX_HEIGHT}
+                    isStreaming={isStreaming}
+                    handleStop={handleStop}
+                    handleSendMessage={handleSendMessage}
+                    enhancingPrompt={enhancingPrompt}
+                    enhancePrompt={enhancePrompt}
+                    isListening={isListening}
+                    startListening={startListening}
+                    stopListening={stopListening}
+                    chatStarted={chatStarted}
+                    exportChat={exportChat}
+                    qrModalOpen={qrModalOpen}
+                    setQrModalOpen={setQrModalOpen}
+                    handleFileUpload={handleFileUpload}
+                    chatMode={chatMode}
+                    setChatMode={setChatMode}
+                    designScheme={designScheme}
+                    setDesignScheme={setDesignScheme}
+                    selectedElement={selectedElement}
+                    setSelectedElement={setSelectedElement}
+                    onWebSearchResult={onWebSearchResult}
+                  />
                 </div>
               </div>
             </StickToBottom>

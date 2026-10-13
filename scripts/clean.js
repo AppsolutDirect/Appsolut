@@ -1,8 +1,8 @@
-import { rm, existsSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { execSync } from 'node:child_process';
+import { rm, existsSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

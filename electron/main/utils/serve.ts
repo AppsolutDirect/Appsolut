@@ -1,10 +1,10 @@
-import { createReadableStreamFromReadable } from '@remix-run/node';
-import type { ServerBuild } from '@remix-run/node';
-import mime from 'mime';
 import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import type { ServerBuild } from '@remix-run/node';
+import { createReadableStreamFromReadable } from '@remix-run/node';
 import { app } from 'electron';
+import mime from 'mime';
 import { isDev } from './constants';
 
 export async function loadServerBuild(): Promise<any> {

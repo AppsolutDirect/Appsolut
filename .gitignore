@@ -45,6 +45,7 @@ changelogUI.md
 docs/instructions/Roadmap.md
 .cursorrules
 *.md
+!THIRD_PARTY_NOTICES.md
 .qodo
 
 test-results/

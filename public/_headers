@@ -1,0 +1,16 @@
+# Cloudflare Pages: Response-Header fuer die statischen PWA-Assets.
+#
+# Hinweis: Der HTML-Response kommt aus dem Remix-SSR (Pages Functions); er wird direkt
+# in app/entry.server.tsx gesetzt. _headers greift nur fuer statische Assets.
+#
+# 1) Das Manifest muss mit einem JSON-Medientyp ausgeliefert werden, sonst ignoriert
+#    Chromium es (dann: "Diese App kann nicht installiert werden").
+# 2) sw.js nie lange cachen, damit neue Deployes sofort greifen.
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/sw.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: no-cache

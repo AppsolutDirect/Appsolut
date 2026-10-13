@@ -1,17 +1,17 @@
 /// <reference types="vite/client" />
+import path from 'node:path';
 import { createRequestHandler } from '@remix-run/node';
 import electron, { app, BrowserWindow, ipcMain, protocol, session } from 'electron';
 import log from 'electron-log';
-import path from 'node:path';
 import * as pkg from '../../package.json';
-import { setupAutoUpdater } from './utils/auto-update';
-import { isDev, DEFAULT_PORT } from './utils/constants';
-import { initViteServer, viteServer } from './utils/vite-server';
 import { setupMenu } from './ui/menu';
 import { createWindow } from './ui/window';
+import { setupAutoUpdater } from './utils/auto-update';
+import { isDev, DEFAULT_PORT } from './utils/constants';
 import { initCookies, storeCookies } from './utils/cookie';
-import { loadServerBuild, serveAsset } from './utils/serve';
 import { reloadOnChange } from './utils/reload';
+import { loadServerBuild, serveAsset } from './utils/serve';
+import { initViteServer, viteServer } from './utils/vite-server';
 
 Object.assign(console, log.functions);
 
@@ -64,7 +64,7 @@ keys.forEach((key) => console.log(`${key}:`, app.getPath(key)));
 console.log('start whenReady');
 
 declare global {
-  // eslint-disable-next-line no-var, @typescript-eslint/naming-convention
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   var __electron__: typeof electron;
 }
 

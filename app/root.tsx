@@ -25,8 +25,21 @@ export const links: LinksFunction = () => [
     href: '/favicon.svg',
     type: 'image/svg+xml',
   },
-  { rel: 'manifest', href: '/manifest.json' },
-  { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
+  {
+    /*
+     * Wichtig hinter Cloudflare Access (Zero Trust): Browser holen das Web-App-Manifest
+     * grundsaetzlich OHNE Cookies. Ein auth-geschuetzter Proxy antwortet dann mit einer
+     * Redirect-Response auf eine fremde Login-Domain -> das Manifest ist unlesbar und der
+     * Browser meldet die App als "nicht installierbar".
+     * crossorigin="use-credentials" erzwingt den credentialed Fetch (same-origin, kein CORS
+     * notwendig) und hat ohne Proxy keinen Effekt.
+     */
+    rel: 'manifest',
+    href: '/manifest.webmanifest',
+    crossOrigin: 'use-credentials',
+  },
+  { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
+  { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png', sizes: '180x180' },
   { rel: 'stylesheet', href: reactToastifyStyles },
   { rel: 'stylesheet', href: tailwindReset },
   { rel: 'stylesheet', href: globalStyles },
@@ -64,9 +77,12 @@ const inlineThemeCode = stripIndents`
 export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-visual" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#1e2327" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="bolt.diy" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <Meta />
     <Links />
     <script dangerouslySetInnerHTML={{ __html: inlineThemeCode }} />
@@ -80,13 +96,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.querySelector('html')?.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // PWA: Service Worker registrieren und bei einer neuen Version einmal neu laden
+  /*
+   * PWA: Service Worker nur im Production-Build registrieren (Dev-HMR unberührt)
+   * und bei einer neuen Version einmal neu laden.
+   */
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) {
+    if (process.env.NODE_ENV !== 'production' || !('serviceWorker' in navigator)) {
       return undefined;
     }
 
     const hadController = !!navigator.serviceWorker.controller;
+
     let reloading = false;
 
     const onControllerChange = () => {

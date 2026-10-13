@@ -168,6 +168,7 @@ export default class GoogleProvider extends BaseProvider {
       middleware: {
         transformParams: async ({ params }) => {
           const prompt = params.prompt as any[];
+
           const systemText = prompt
             .filter((message) => message.role === 'system')
             .map((message) => message.content)
@@ -181,7 +182,10 @@ export default class GoogleProvider extends BaseProvider {
           const firstUserIndex = rest.findIndex((message) => message.role === 'user');
 
           if (firstUserIndex === -1) {
-            return { ...params, prompt: [{ role: 'user', content: [{ type: 'text', text: systemText }] }, ...rest] as any };
+            return {
+              ...params,
+              prompt: [{ role: 'user', content: [{ type: 'text', text: systemText }] }, ...rest] as any,
+            };
           }
 
           const firstUser = rest[firstUserIndex];
