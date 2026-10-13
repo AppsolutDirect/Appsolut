@@ -155,6 +155,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [inputHeight, setInputHeight] = useState(0);
     const [slideDistance, setSlideDistance] = useState(0);
 
+    /*
+     * Intro-Text ("Where ideas begin") auf der Startseite ausblenden, sobald in
+     * das Prompt-Textfeld geklickt wird. Der Text bleibt danach dauerhaft weg,
+     * bis die Komponente neu gerendert wird (z. B. Neuladen der Seite).
+     */
+    const [introHidden, setIntroHidden] = useState(false);
+
     const inputCollapsed = inputAnim === 'out' || inputAnim === 'gone';
 
     // Höhe des Eingabebereichs messen (wird für Animation und Platzfreigabe gebraucht)
@@ -495,16 +502,26 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     };
 
+    const handlePromptFocus = (event: React.FocusEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement;
+
+      // React onFocus bubbelt, daher wird hier der Fokus im Prompt-Textfeld erkannt
+      if (target.tagName === 'TEXTAREA' && inputContainerRef.current?.contains(target)) {
+        setIntroHidden(true);
+      }
+    };
+
     const baseChat = (
       <div
         ref={ref}
         className={classNames(styles.BaseChat, 'relative flex h-full w-full overflow-hidden')}
         data-chat-visible={showChat}
+        onFocus={handlePromptFocus}
       >
         <ClientOnly>{() => <Menu />}</ClientOnly>
         <div className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
-            {!chatStarted && (
+            {!chatStarted && !introHidden && (
               <div id="intro" className="mt-[16vh] max-w-2xl mx-auto text-center px-4 lg:px-0">
                 <h1 className="text-3xl lg:text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
                   Where ideas begin
