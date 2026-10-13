@@ -18,6 +18,17 @@
   opacity: 1;
 }
 
+@media (max-width: 1023px) {
+  .BaseChat .MobilePrompt {
+    position: fixed;
+    right: 0.5rem;
+    bottom: 0;
+    left: 0.5rem;
+    width: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 .PromptEffectContainer {
   --prompt-container-offset: 50px;
   --prompt-line-stroke-width: 1px;

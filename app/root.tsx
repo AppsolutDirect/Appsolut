@@ -77,7 +77,7 @@ const inlineThemeCode = stripIndents`
 export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-visual" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#1e2327" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

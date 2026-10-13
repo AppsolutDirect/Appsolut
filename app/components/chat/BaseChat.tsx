@@ -155,61 +155,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [inputHeight, setInputHeight] = useState(0);
     const [slideDistance, setSlideDistance] = useState(0);
 
-    /*
-     * Handy-Tastatur (Android/iOS): Der Eingabebereich wird um genau die Tastaturhöhe nach oben
-     * geschoben und fährt beim Schließen wieder ganz nach unten.
-     *
-     * Grundlage ist ausschließlich die sichtbare Fläche (visualViewport). Ihr unterer Rand ist bei
-     * eingeblendeter Tastatur exakt die Oberkante der Tastatur. Die Verschiebung wird direkt am
-     * Element gesetzt (ohne React-Rendering, ohne Übergangsanimation) – dadurch klebt der Container
-     * ohne Lücke direkt über der Tastatur.
-     *
-     * Bewusst NICHT die VirtualKeyboard-API mit overlaysContent verwenden: deren Höhe
-     * (env(keyboard-inset-height)) weicht von der tatsächlich sichtbaren Fläche ab und schiebt den
-     * Container zu weit nach oben (sichtbare Lücke zur Tastatur).
-     */
-    useEffect(() => {
-      const viewport = window.visualViewport;
-
-      if (!viewport) {
-        return undefined;
-      }
-
-      const apply = () => {
-        // Abstand zwischen unterem Rand der Layout-Fläche und unterem Rand der sichtbaren Fläche
-        // (= Tastaturhöhe, 0 wenn keine Tastatur eingeblendet ist)
-        const offset = Math.round(window.innerHeight - viewport.height - viewport.offsetTop);
-        const element = inputContainerRef.current;
-
-        if (element) {
-          // kleine Abweichungen (Adressleiste etc.) ignorieren
-          element.style.transform = offset > 80 ? `translateY(-${offset}px)` : '';
-        }
-      };
-
-      // Manche Android-Tastaturen melden ihre Größe verspätet: kurz nachmessen
-      const timers: ReturnType<typeof setTimeout>[] = [];
-
-      const applySoon = () => {
-        apply();
-        [100, 250].forEach((delay) => timers.push(setTimeout(apply, delay)));
-      };
-
-      apply();
-      viewport.addEventListener('resize', apply);
-      viewport.addEventListener('scroll', apply);
-      document.addEventListener('focusin', applySoon);
-      document.addEventListener('focusout', applySoon);
-
-      return () => {
-        timers.forEach(clearTimeout);
-        viewport.removeEventListener('resize', apply);
-        viewport.removeEventListener('scroll', apply);
-        document.removeEventListener('focusin', applySoon);
-        document.removeEventListener('focusout', applySoon);
-      };
-    }, []);
-
     const inputCollapsed = inputAnim === 'out' || inputAnim === 'gone';
 
     // Höhe des Eingabebereichs messen (wird für Animation und Platzfreigabe gebraucht)
@@ -608,9 +553,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               `}</style>
               <div
                 ref={inputContainerRef}
-                className={classNames('mt-auto w-full max-w-chat mx-auto z-prompt', {
-                  'sticky bottom-0': chatStarted,
-                })}
+                className={classNames(
+                  'mt-auto max-w-chat mx-auto z-prompt',
+                  {
+                    'sticky bottom-0': chatStarted,
+                  },
+                  styles.MobilePrompt,
+                )}
                 style={{
                   ...(chatStarted && inputHeight > 0 ? { height: inputCollapsed ? 0 : inputHeight } : {}),
                   transition:
