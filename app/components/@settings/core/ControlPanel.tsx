@@ -315,14 +315,11 @@ export const ControlPanel = ({ open, onClose }: ControlPanelProps) => {
                     {activeTab ? (
                       getTabComponent(activeTab)
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 relative">
                         {visibleTabs.map((tab, index) => (
                           <div
                             key={tab.id}
-                            className={classNames(
-                              'min-h-[7rem] sm:aspect-[1.5/1] transition-transform duration-100 ease-out',
-                              'hover:scale-[1.01]',
-                            )}
+                            className={classNames('transition-transform duration-100 ease-out', 'hover:scale-[1.01]')}
                             style={{
                               animationDelay: `${index * 30}ms`,
                               animation: open ? 'fadeInUp 200ms ease-out forwards' : 'none',

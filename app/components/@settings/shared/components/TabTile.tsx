@@ -31,7 +31,7 @@ export const TabTile: React.FC<TabTileProps> = ({
     <Tooltip.Provider delayDuration={0}>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <div className={classNames('min-h-[160px] list-none', className || '')}>
+          <div className={classNames('list-none', className || '')}>
             <div className="relative h-full rounded-xl border border-[#E5E5E5] dark:border-[#333333] p-0.5">
               <GlowingEffect
                 blur={0}
@@ -46,7 +46,7 @@ export const TabTile: React.FC<TabTileProps> = ({
               <div
                 onClick={onClick}
                 className={classNames(
-                  'relative flex flex-col items-center justify-center h-full p-4 rounded-lg',
+                  'relative flex items-start gap-3 h-full px-3 py-2 rounded-lg',
                   'bg-white dark:bg-[#141414]',
                   'group cursor-pointer',
                   'hover:bg-purple-50 dark:hover:bg-[#1a1a1a]',
@@ -55,21 +55,8 @@ export const TabTile: React.FC<TabTileProps> = ({
                   isLoading ? 'cursor-wait opacity-70 pointer-events-none' : '',
                 )}
               >
-                {/* Icon */}
-                <div
-                  className={classNames(
-                    'relative',
-                    'w-14 h-14',
-                    'flex items-center justify-center',
-                    'rounded-xl',
-                    'bg-gray-100 dark:bg-gray-800',
-                    'ring-1 ring-gray-200 dark:ring-gray-700',
-                    'group-hover:bg-purple-100 dark:group-hover:bg-gray-700/80',
-                    'group-hover:ring-purple-200 dark:group-hover:ring-purple-800/30',
-                    'transition-all duration-100 ease-out',
-                    isActive ? 'bg-purple-500/10 dark:bg-purple-500/10 ring-purple-500/30 dark:ring-purple-500/20' : '',
-                  )}
-                >
+                {/* Icon (32x32 px) */}
+                <div className="relative shrink-0 w-8 h-8 flex items-center justify-center">
                   {(() => {
                     const IconComponent = TAB_ICONS[tab.id];
                     return (
@@ -87,10 +74,10 @@ export const TabTile: React.FC<TabTileProps> = ({
                 </div>
 
                 {/* Label and Description */}
-                <div className="flex flex-col items-center mt-4 w-full">
+                <div className="flex flex-col items-start flex-1 min-w-0">
                   <h3
                     className={classNames(
-                      'text-[15px] font-medium leading-snug mb-2',
+                      'text-sm font-semibold leading-5',
                       'text-gray-700 dark:text-gray-200',
                       'group-hover:text-purple-600 dark:group-hover:text-purple-300/90',
                       'transition-colors duration-100 ease-out',
@@ -102,10 +89,9 @@ export const TabTile: React.FC<TabTileProps> = ({
                   {description && (
                     <p
                       className={classNames(
-                        'text-[13px] leading-relaxed',
+                        'mt-0.5 text-xs leading-snug',
                         'text-gray-500 dark:text-gray-400',
-                        'max-w-[85%]',
-                        'text-center',
+                        'text-left',
                         'group-hover:text-purple-500 dark:group-hover:text-purple-400/70',
                         'transition-colors duration-100 ease-out',
                         isActive ? 'text-purple-400 dark:text-purple-400/80' : '',
@@ -119,7 +105,7 @@ export const TabTile: React.FC<TabTileProps> = ({
                 {/* Update Indicator with Tooltip */}
                 {hasUpdate && (
                   <>
-                    <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse" />
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse" />
                     <Tooltip.Portal>
                       <Tooltip.Content
                         className={classNames(
