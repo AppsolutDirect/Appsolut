@@ -22,10 +22,15 @@
   .BaseChat .MobilePrompt {
     position: fixed;
     right: 0.5rem;
+    /*
+     * Standardwert: klebt exakt am unteren Rand. Der tatsächliche Wert wird bei
+     * Bedarf (Tastatur, ausfahrende Browser-Leiste) per visualViewport gesetzt.
+     * Bewusst KEIN padding-bottom mehr: ein Safe-Area-Innenabstand hat den
+     * Container um genau diesen Betrag vom unteren Rand abgerückt (sichtbare Lücke).
+     */
     bottom: 0;
     left: 0.5rem;
     width: auto;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 

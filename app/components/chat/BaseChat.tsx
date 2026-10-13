@@ -16,6 +16,7 @@ import GitCloneButton from './GitCloneButton';
 import LlmErrorAlert from './LLMApiAlert';
 import { Messages } from './Messages.client';
 import ProgressCompilation from './ProgressCompilation';
+import { computeComposerBottomOffset } from './composerAnchor';
 import { ExamplePrompts } from '~/components/chat/ExamplePrompts';
 import { SupabaseChatAlert } from '~/components/chat/SupabaseAlert';
 import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
@@ -163,6 +164,84 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [introHidden, setIntroHidden] = useState(false);
 
     const inputCollapsed = inputAnim === 'out' || inputAnim === 'gone';
+
+    /*
+     * Smartphone-Ansicht (unter 1024 px): Der Eingabebereich liegt fest (position: fixed)
+     * und wird immer am unteren Rand der tatsächlich sichtbaren Fläche verankert.
+     *
+     * - Ohne Tastatur: `bottom` = 0 -> der Container klebt exakt am unteren Rand.
+     * - Mit Tastatur / ausfahrender Browser-Leiste: `bottom` = Abstand zwischen Layout-
+     *   und sichtbarer Fläche -> der Container sitzt direkt darüber (keine Lücke).
+     *
+     * Es wird ausschließlich der `bottom`-Wert direkt am Element geändert (kein
+     * React-Rendering, keine Transformation) und nur dann, wenn sich der Wert
+     * tatsächlich ändert – dadurch bleibt Scrollen und Tippen flüssig.
+     */
+    useEffect(() => {
+      const element = inputContainerRef.current;
+      const mediaQuery = window.matchMedia('(max-width: 1023px)');
+
+      if (!element || !mediaQuery) {
+        return undefined;
+      }
+
+      const viewport = window.visualViewport;
+
+      let lastBottom = -1;
+      let frame = 0;
+
+      const apply = () => {
+        frame = 0;
+
+        const bottom = viewport
+          ? computeComposerBottomOffset(window.innerHeight, viewport.height, viewport.offsetTop)
+          : 0;
+
+        if (bottom !== lastBottom) {
+          lastBottom = bottom;
+          element.style.bottom = `${bottom}px`;
+        }
+      };
+
+      // Mehrere Ereignisse pro Bild werden zu einer Aktualisierung zusammengefasst
+      const schedule = () => {
+        if (frame) {
+          return;
+        }
+
+        frame = requestAnimationFrame(apply);
+      };
+
+      const sync = () => {
+        viewport?.removeEventListener('resize', schedule);
+        viewport?.removeEventListener('scroll', schedule);
+
+        if (mediaQuery.matches) {
+          apply();
+          viewport?.addEventListener('resize', schedule);
+          viewport?.addEventListener('scroll', schedule);
+        } else {
+          lastBottom = -1;
+          element.style.bottom = '';
+        }
+      };
+
+      sync();
+
+      // Breakpoint-Wechsel (z. B. Drehen/Resize) berücksichtigen
+      mediaQuery.addEventListener('change', sync);
+
+      return () => {
+        if (frame) {
+          cancelAnimationFrame(frame);
+        }
+
+        viewport?.removeEventListener('resize', schedule);
+        viewport?.removeEventListener('scroll', schedule);
+        mediaQuery.removeEventListener('change', sync);
+        element.style.bottom = '';
+      };
+    }, []);
 
     // Höhe des Eingabebereichs messen (wird für Animation und Platzfreigabe gebraucht)
     useEffect(() => {
