@@ -156,30 +156,19 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [slideDistance, setSlideDistance] = useState(0);
 
     /*
-     * Android-Bildschirmtastatur: Der Eingabebereich wird um genau die Tastaturhöhe nach oben
+     * Handy-Tastatur (Android/iOS): Der Eingabebereich wird um genau die Tastaturhöhe nach oben
      * geschoben und fährt beim Schließen wieder ganz nach unten.
      *
-     * Schnellster Weg (Chrome/Android): VirtualKeyboard-API. Der Browser liefert die Tastaturhöhe
-     * direkt als CSS-Wert (env(keyboard-inset-height)), ohne JavaScript und ohne Neuberechnung
-     * der Seite. Fallback für andere Browser: sichtbare Fläche messen und die Verschiebung
-     * direkt am Element setzen (ohne React-Rendering, ohne Übergangsanimation).
+     * Grundlage ist ausschließlich die sichtbare Fläche (visualViewport). Ihr unterer Rand ist bei
+     * eingeblendeter Tastatur exakt die Oberkante der Tastatur. Die Verschiebung wird direkt am
+     * Element gesetzt (ohne React-Rendering, ohne Übergangsanimation) – dadurch klebt der Container
+     * ohne Lücke direkt über der Tastatur.
+     *
+     * Bewusst NICHT die VirtualKeyboard-API mit overlaysContent verwenden: deren Höhe
+     * (env(keyboard-inset-height)) weicht von der tatsächlich sichtbaren Fläche ab und schiebt den
+     * Container zu weit nach oben (sichtbare Lücke zur Tastatur).
      */
-    const [hasVirtualKeyboard, setHasVirtualKeyboard] = useState(false);
-
     useEffect(() => {
-      const nav = navigator as Navigator & { virtualKeyboard?: { overlaysContent: boolean } };
-
-      if (nav.virtualKeyboard) {
-        nav.virtualKeyboard.overlaysContent = true;
-        setHasVirtualKeyboard(true);
-
-        return () => {
-          if (nav.virtualKeyboard) {
-            nav.virtualKeyboard.overlaysContent = false;
-          }
-        };
-      }
-
       const viewport = window.visualViewport;
 
       if (!viewport) {
@@ -187,6 +176,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
 
       const apply = () => {
+        // Abstand zwischen unterem Rand der Layout-Fläche und unterem Rand der sichtbaren Fläche
+        // (= Tastaturhöhe, 0 wenn keine Tastatur eingeblendet ist)
         const offset = Math.round(window.innerHeight - viewport.height - viewport.offsetTop);
         const element = inputContainerRef.current;
 
@@ -622,9 +613,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 })}
                 style={{
                   ...(chatStarted && inputHeight > 0 ? { height: inputCollapsed ? 0 : inputHeight } : {}),
-                  ...(hasVirtualKeyboard
-                    ? { transform: 'translateY(calc(-1 * env(keyboard-inset-height, 0px)))' }
-                    : {}),
                   transition:
                     chatStarted && inputHeight > 0 && inputAnim !== 'idle' ? 'height 180ms ease-out' : undefined,
                 }}
