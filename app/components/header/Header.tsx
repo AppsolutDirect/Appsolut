@@ -47,7 +47,7 @@ export function Header() {
         aria-label="Menü öffnen"
         aria-expanded={menuOpen}
         onClick={() => sidebarOpenStore.set(!sidebarOpenStore.get())}
-        className="z-logo shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textPrimary hover:bg-bolt-elements-item-backgroundActive active:bg-bolt-elements-item-backgroundActive transition-colors"
+        className="z-logo shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-bolt-elements-textPrimary bg-bolt-elements-item-backgroundActive hover:bg-bolt-elements-item-backgroundActive active:bg-bolt-elements-item-backgroundActive transition-colors"
       >
         <div className="i-ph:list text-xl" />
       </button>
